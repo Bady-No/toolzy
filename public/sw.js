@@ -1,9 +1,7 @@
-const CACHE_NAME = 'toolbox-pwa-v2';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
+const CACHE_NAME = 'toolbox-pwa-v3';
+// Relative URLs resolve against the service worker's own location,
+// so this works both at `/` (local) and `/toolzy/` (GitHub Pages).
+const ASSETS_TO_CACHE = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -43,7 +41,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Offline fallback for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
       });
     })

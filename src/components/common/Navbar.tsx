@@ -184,7 +184,7 @@ export const Navbar: React.FC = () => {
               aria-label={t('nav.home')}
             >
               <img
-                src="/logo-toolzy.png"
+                src={`${import.meta.env.BASE_URL}logo-toolzy.png`}
                 alt="Toolzy"
                 width={959}
                 height={364}
@@ -485,7 +485,7 @@ export const Navbar: React.FC = () => {
             {/* Sheet header */}
             <div className="flex items-center justify-between gap-3 mb-4">
               <img
-                src="/logo-toolzy.png"
+                src={`${import.meta.env.BASE_URL}logo-toolzy.png`}
                 alt="Toolzy"
                 width={959}
                 height={364}

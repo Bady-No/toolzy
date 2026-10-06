@@ -21,9 +21,12 @@ const AppContent: React.FC = () => {
     // Register PWA service worker if supported
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch((err) => {
-          console.warn('PWA service worker registration failed: ', err);
-        });
+        const base = import.meta.env.BASE_URL;
+        navigator.serviceWorker
+          .register(`${base}sw.js`, { scope: base })
+          .catch((err) => {
+            console.warn('PWA service worker registration failed: ', err);
+          });
       });
     }
   }, []);

@@ -47,7 +47,7 @@ export const Footer: React.FC = () => {
           {/* Brand info & Elbaraka Group acknowledgment */}
           <div className="md:col-span-4 space-y-3.5">
             <img
-              src="/logo-toolzy.png"
+              src={`${import.meta.env.BASE_URL}logo-toolzy.png`}
               alt="Toolzy"
               width={959}
               height={364}
@@ -189,7 +189,7 @@ export const Footer: React.FC = () => {
 
           <div className="flex items-center gap-4">
             <a
-              href="/cookies.html"
+              href={`${import.meta.env.BASE_URL}cookies.html`}
               className="font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
               {t('footer.cookies')}
