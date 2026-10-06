@@ -1,0 +1,6 @@
+{
+  "name": "صندوق الأدوات | ToolBox",
+  "description": "تطبيق أدوات الصور والملفات المتكامل - معالجة فورية 100% في المتصفح بكل خصوصية وأمان. ضغط، تحويل، دمج PDF، إزالة الخلفية وتوليد وقراءة QR.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
