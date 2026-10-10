@@ -5,8 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    // Served from a sub-path on GitHub Pages (https://<user>.github.io/toolzy/)
-    base: process.env.VITE_BASE || '/',
+    // Served from the /toolzy/ sub-path on GitHub Pages (https://bady-no.github.io/toolzy/).
+    // For a different host/repo, change this to '/'.
+    base: '/toolzy/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
