@@ -186,15 +186,6 @@ export const Footer: React.FC = () => {
               </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <a
-              href={`${import.meta.env.BASE_URL}cookies.html`}
-              className="font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              {t('footer.cookies')}
-            </a>
-          </div>
         </div>
       </div>
     </footer>

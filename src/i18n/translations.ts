@@ -207,7 +207,6 @@ export const translations = {
     },
     footer: {
       copyright: 'جميع الحقوق محفوظة © {year} تولزي (Toolzy)',
-      cookies: 'ملفات الارتباط',
       createdBy: 'تم التطوير بواسطة مجموعة البركة (Elbaraka Group)',
       mobileApps: 'تطبيقات الجوال',
       comingSoon: 'قريباً',
@@ -423,7 +422,6 @@ export const translations = {
     },
     footer: {
       copyright: 'All rights reserved © {year} Toolzy',
-      cookies: 'Cookies',
       createdBy: 'Created by Elbaraka Group',
       mobileApps: 'Mobile Apps',
       comingSoon: 'Soon',
@@ -639,7 +637,6 @@ export const translations = {
     },
     footer: {
       copyright: 'Tous droits réservés © {year} Toolzy',
-      cookies: 'Cookies',
       createdBy: 'Créé par Elbaraka Group',
       mobileApps: 'Applications Mobiles',
       comingSoon: 'Bientôt',
