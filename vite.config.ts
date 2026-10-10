@@ -5,9 +5,10 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    // Served from the /toolzy/ sub-path on GitHub Pages (https://bady-no.github.io/toolzy/).
-    // For a different host/repo, change this to '/'.
-    base: '/toolzy/',
+    // Relative base: assets resolve relative to the page, so the same build
+    // works anywhere — GitHub Pages sub-path (/toolzy/), Netlify root,
+    // a custom domain, even a local file server. Safe because routing is hash-based.
+    base: './',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
