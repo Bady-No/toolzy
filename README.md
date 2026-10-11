@@ -66,13 +66,15 @@ Pushing to `main` automatically builds and deploys to **GitHub Pages** via GitHu
 ## 📊 Admin dashboard (visitor stats)
 
 The site has a private stats page at **`#admin`** (not linked anywhere): login with your
-admin email/password to see visits, unique visitors, a 30-day chart, most-used tools and
-countries. Data is stored in [Supabase](https://supabase.com) (free tier).
+admin email/password to see visits, unique visitors, a 30-day chart, most-used tools,
+countries, a recent-visitors log (with IP addresses) and every tool-share click.
+Data is stored in [Supabase](https://supabase.com) (free tier).
 
-What is collected: day, page/tool, country, and a **salted SHA-256** of a random
-per-browser ID. No cookies, no IPs, no personal data. Anonymous visitors can only
-*insert* a visit row — only a signed-in admin can *read* anything (enforced by
-database policies).
+What is collected per visit: time, page/tool, country, **IP address**, and a
+**salted SHA-256** of a random per-browser ID (never any personal profile).
+Per share click: tool, channel (WhatsApp/Telegram/X/copy) + the same geo fields.
+No cookies. Anonymous visitors can only *insert* rows — only a signed-in admin
+can *read* anything (enforced by database policies).
 
 ### One-time setup (~5 minutes)
 
@@ -112,6 +114,56 @@ database policies).
 Until step 4 is done, the tracker stays silent and `#admin` shows a setup notice —
 so it is safe to deploy before configuring.
 
+### Update SQL (IP logging + share tracking)
+
+Run this once in the **SQL Editor** if your project was created before these
+features existed (the dashboard keeps working either way — it just shows hints):
+
+```sql
+-- IP address on visits
+alter table public.visits add column if not exists ip text;
+
+-- Every tool-share click (WhatsApp / Telegram / X / copy / native)
+create table if not exists public.shares (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  day date not null,
+  tool_id text,
+  channel text,
+  origin text,
+  country text,
+  ip text
+);
+
+create index if not exists shares_day_idx on public.shares (day);
+
+alter table public.shares enable row level security;
+
+create policy "public may insert shares"
+  on public.shares for insert to anon, authenticated
+  with check (true);
+
+create policy "admins may read shares"
+  on public.shares for select to authenticated
+  using (true);
+```
+
+### Optional: auto-purge old data (recommended)
+
+Because IPs are stored, keep retention short. With `pg_cron` (free on Supabase):
+
+```sql
+create extension if not exists pg_cron;
+
+select cron.schedule('purge-old-rows', '17 3 * * *', $$
+  delete from public.visits where created_at < now() - interval '90 days';
+$$);
+
+select cron.schedule('purge-old-shares', '23 3 * * *', $$
+  delete from public.shares where created_at < now() - interval '90 days';
+$$);
+```
+
 ## 📁 Project structure
 
 ```
@@ -125,16 +177,18 @@ src/
 ├── constants/     Tool registry (ids, icons, gradients, badges)
 ├── context/       App state: active tool (hash routing), theme, language, toasts
 ├── i18n/          Translations (ar / en / fr)
-├── lib/           Anonymous visit tracker
+├── lib/           Visit + share tracker (anonymous, best-effort)
 └── utils/         Image/PDF/QR processing + clipboard helpers (all client-side)
 ```
 
 ## Privacy
 
-No uploads, no servers, no cookies, no personal data. Every file is processed locally
-in your browser — offline capable. If the optional admin dashboard is connected, the
-site counts anonymous visits (day, page, country, salted hash of a random ID) and
-nothing else.
+No uploads, no servers, no cookies. Every file is processed locally in your browser —
+offline capable, and your files never leave your device. If the admin dashboard is
+connected, the site also records visit statistics and share clicks (time, page/tool,
+country, IP address, salted hash of a random ID) — used only for traffic stats and
+security, never for profiling. See the optional auto-purge job above to keep that
+data short-lived.
 
 ---
 

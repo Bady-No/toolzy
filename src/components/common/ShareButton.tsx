@@ -3,6 +3,7 @@ import { Check, Copy, Share2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getTool } from '../../constants/tools';
 import { copyText } from '../../utils/clipboard';
+import { logShare } from '../../lib/analytics';
 
 interface ShareButtonProps {
   /** Tool to share — its hash deep link (`#tool-id`) is what gets copied/sent */
@@ -58,6 +59,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({ toolId, wrapperClassNa
   };
 
   const copyLink = async () => {
+    logShare(toolId, 'copy', 'card');
     const ok = await copyText(url);
     if (ok) {
       setCopied(true);
@@ -71,6 +73,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({ toolId, wrapperClassNa
 
   const nativeShare = async () => {
     close();
+    logShare(toolId, 'native', 'card');
     try {
       await navigator.share({ title: `Toolzy — ${title}`, text: message, url });
     } catch {
@@ -81,9 +84,9 @@ export const ShareButton: React.FC<ShareButtonProps> = ({ toolId, wrapperClassNa
   const encUrl = encodeURIComponent(url);
   const encMsg = encodeURIComponent(message);
   const socials = [
-    { label: 'WhatsApp', href: `https://wa.me/?text=${encMsg}` },
-    { label: 'X', href: `https://twitter.com/intent/tweet?url=${encUrl}&text=${encMsg}` },
-    { label: 'Telegram', href: `https://t.me/share/url?url=${encUrl}&text=${encMsg}` },
+    { label: 'WhatsApp', channel: 'whatsapp', href: `https://wa.me/?text=${encMsg}` },
+    { label: 'X', channel: 'x', href: `https://twitter.com/intent/tweet?url=${encUrl}&text=${encMsg}` },
+    { label: 'Telegram', channel: 'telegram', href: `https://t.me/share/url?url=${encUrl}&text=${encMsg}` },
   ];
 
   const wrapper = wrapperClassName ?? 'relative';
@@ -133,7 +136,10 @@ export const ShareButton: React.FC<ShareButtonProps> = ({ toolId, wrapperClassNa
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={close}
+              onClick={() => {
+                logShare(toolId, s.channel, 'card');
+                close();
+              }}
               className={menuItem}
             >
               <span>{s.label}</span>

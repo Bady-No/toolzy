@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getTool } from '../../constants/tools';
 import { copyText } from '../../utils/clipboard';
+import { logShare } from '../../lib/analytics';
 
 interface ToolHeaderProps {
   tool: string;
@@ -42,6 +43,7 @@ export const ToolHeader: React.FC<ToolHeaderProps> = ({ tool }) => {
   const encMessage = encodeURIComponent(`${shareTitle} — Toolzy ${shareUrl}`);
 
   const handleCopy = async () => {
+    logShare(tool, 'copy', 'tool');
     const ok = await copyText(shareUrl);
     if (ok) {
       setCopied(true);
@@ -111,6 +113,7 @@ export const ToolHeader: React.FC<ToolHeaderProps> = ({ tool }) => {
           href={`https://wa.me/?text=${encMessage}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => logShare(tool, 'whatsapp', 'tool')}
           title={lang === 'ar' ? 'مشاركة عبر واتساب' : lang === 'fr' ? 'Partager sur WhatsApp' : 'Share on WhatsApp'}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer focus-visible:outline-2"
         >
@@ -122,6 +125,7 @@ export const ToolHeader: React.FC<ToolHeaderProps> = ({ tool }) => {
           href={`https://t.me/share/url?url=${encUrl}&text=${encTitle}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => logShare(tool, 'telegram', 'tool')}
           title="Telegram"
           className={`${ghostPill} border-sky-200 dark:border-sky-800/70 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/60`}
         >
@@ -133,6 +137,7 @@ export const ToolHeader: React.FC<ToolHeaderProps> = ({ tool }) => {
           href={`https://twitter.com/intent/tweet?url=${encUrl}&text=${encTitle}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => logShare(tool, 'x', 'tool')}
           title="X (Twitter)"
           className={`${ghostPill} border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5`}
         >

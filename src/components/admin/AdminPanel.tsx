@@ -7,6 +7,7 @@ import {
   LogOut,
   MousePointerClick,
   RefreshCw,
+  Share2,
   ShieldCheck,
 } from 'lucide-react';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured } from '../../config/admin';
@@ -17,10 +18,29 @@ const DAY_MS = 86_400_000;
 const DAYS = 30;
 
 type VisitRow = {
+  created_at: string;
   day: string;
   tool_id: string | null;
   country: string | null;
   visitor_hash: string | null;
+  ip: string | null;
+};
+
+type ShareRow = {
+  created_at: string;
+  day: string;
+  tool_id: string | null;
+  channel: string | null;
+  country: string | null;
+  ip: string | null;
+};
+
+const CHANNEL_LABELS: Record<string, string> = {
+  whatsapp: 'WhatsApp',
+  telegram: 'Telegram',
+  x: 'X (Twitter)',
+  copy: 'Copy link',
+  native: 'Native share',
 };
 
 const supabase: SupabaseClient | null = isSupabaseConfigured()
@@ -36,6 +56,25 @@ const flagOf = (code: string): string => {
   return String.fromCodePoint(
     ...code.toUpperCase().split('').map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
   );
+};
+
+const REGION_NAMES = new Intl.DisplayNames(['en'], { type: 'region' });
+
+const countryName = (cc: string): string => {
+  if (!cc || cc === '??') return 'Unknown';
+  try {
+    return REGION_NAMES.of(cc.toUpperCase()) ?? cc;
+  } catch {
+    return cc;
+  }
+};
+
+const formatTime = (iso: string): string => {
+  try {
+    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return iso.slice(11, 16);
+  }
 };
 
 const StatCard: React.FC<{
@@ -152,27 +191,72 @@ const LoginForm: React.FC = () => {
 const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
   const { t } = useApp();
   const [rows, setRows] = useState<VisitRow[] | null>(null);
+  const [shares, setShares] = useState<ShareRow[] | null>(null);
+  const [ipOk, setIpOk] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const toolLabel = useCallback(
+    (id: string | null): string => {
+      if (!id || id === 'home') return t('nav.home');
+      const tool = TOOLS.find((x) => x.id === id);
+      return tool ? t(tool.titleKey) : id;
+    },
+    [t]
+  );
 
   const load = useCallback(async () => {
     if (!supabase) return;
     setError(null);
+
+    // --- Visits (fall back to a select without `ip` if the update SQL
+    //     hasn't been run yet, so the dashboard still works)
     const collected: VisitRow[] = [];
+    let fields = 'created_at, day, tool_id, country, visitor_hash, ip';
+    for (let page = 0; page < 20; page++) {
+      let result = await supabase
+        .from('visits')
+        .select(fields)
+        .gte('day', isoDay(DAYS))
+        .order('day', { ascending: true })
+        .range(page * 1000, page * 1000 + 999);
+      if (result.error && page === 0 && /does not exist/i.test(result.error.message)) {
+        setIpOk(false);
+        fields = 'created_at, day, tool_id, country, visitor_hash';
+        result = await supabase
+          .from('visits')
+          .select(fields)
+          .gte('day', isoDay(DAYS))
+          .order('day', { ascending: true })
+          .range(page * 1000, page * 1000 + 999);
+      }
+      if (result.error) {
+        setError(result.error.message);
+        break;
+      }
+      // Dynamic select string → supabase-js can't infer the row shape
+      collected.push(...((result.data ?? []) as unknown as VisitRow[]));
+      if (!result.data || result.data.length < 1000) break;
+    }
+    setRows(collected);
+
+    // --- Shares (missing table → share sections show a setup hint)
+    const shareRows: ShareRow[] = [];
+    let sharesReady = true;
     for (let page = 0; page < 20; page++) {
       const { data, error: err } = await supabase
-        .from('visits')
-        .select('day, tool_id, country, visitor_hash')
+        .from('shares')
+        .select('created_at, day, tool_id, channel, country, ip')
         .gte('day', isoDay(DAYS))
         .order('day', { ascending: true })
         .range(page * 1000, page * 1000 + 999);
       if (err) {
-        setError(err.message);
+        sharesReady = false;
         break;
       }
-      collected.push(...((data ?? []) as VisitRow[]));
+      shareRows.push(...((data ?? []) as ShareRow[]));
       if (!data || data.length < 1000) break;
     }
-    setRows(collected);
+    if (sharesReady) setShares(shareRows);
   }, []);
 
   useEffect(() => {
@@ -210,22 +294,6 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       return { day, visits: v?.visits ?? 0, uniq: v?.uniq.size ?? 0 };
     });
 
-    const toolLabel = (id: string): string => {
-      if (id === 'home') return t('nav.home');
-      const tool = TOOLS.find((x) => x.id === id);
-      return tool ? t(tool.titleKey) : id;
-    };
-
-    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-    const countryLabel = (cc: string): string => {
-      if (cc === '??') return 'Unknown';
-      try {
-        return regionNames.of(cc.toUpperCase()) ?? cc;
-      } catch {
-        return cc;
-      }
-    };
-
     const toList = (m: Map<string, number>, label: (k: string) => string, key: (k: string) => string) =>
       Array.from(m, ([k, count]) => ({ key: key(k), label: label(k), count }))
         .sort((a, b) => b.count - a.count)
@@ -238,10 +306,41 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       week: series.slice(-7).reduce((s, d) => s + d.visits, 0),
       series,
       toolRows: toList(tools, toolLabel, (k) => k),
-      countryRows: toList(countries, countryLabel, (k) => k),
+      countryRows: toList(countries, countryName, (k) => k),
       maxDay: Math.max(1, ...series.map((d) => d.visits)),
     };
-  }, [rows, t]);
+  }, [rows, toolLabel]);
+
+  const shareStats = useMemo(() => {
+    if (!shares) return null;
+    const channels = new Map<string, number>();
+    const perTool = new Map<string, number>();
+    for (const s of shares) {
+      const ch = s.channel ?? 'other';
+      channels.set(ch, (channels.get(ch) ?? 0) + 1);
+      const tl = s.tool_id ?? 'home';
+      perTool.set(tl, (perTool.get(tl) ?? 0) + 1);
+    }
+    const toList = (m: Map<string, number>, label: (k: string) => string) =>
+      Array.from(m, ([k, count]) => ({ key: k, label: label(k), count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8);
+    return {
+      total: shares.length,
+      channelRows: toList(channels, (k) => CHANNEL_LABELS[k] ?? k),
+      toolRows: toList(perTool, toolLabel),
+    };
+  }, [shares, toolLabel]);
+
+  const recent = useMemo(
+    () =>
+      rows
+        ? [...rows]
+            .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+            .slice(0, 25)
+        : null,
+    [rows]
+  );
 
   return (
     <div className="space-y-6">
@@ -275,6 +374,13 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
         <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">{error}</p>
       )}
 
+      {!ipOk && (
+        <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+          IP logging isn’t enabled yet — run the “Update SQL” from the README
+          (adds the <code className="font-bold">ip</code> column), then refresh.
+        </p>
+      )}
+
       {!stats ? (
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 py-16 text-center text-sm text-gray-400">
           Loading statistics…
@@ -282,7 +388,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       ) : (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <StatCard
               icon={<MousePointerClick className="w-5 h-5" />}
               label="Total visits"
@@ -306,6 +412,12 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
               label="Last 7 days"
               value={stats.week}
               tone="bg-sky-500/10 text-sky-600 dark:text-sky-400"
+            />
+            <StatCard
+              icon={<Share2 className="w-5 h-5" />}
+              label="Total shares"
+              value={shareStats?.total ?? 0}
+              tone="bg-rose-500/10 text-rose-600 dark:text-rose-400"
             />
           </div>
 
@@ -334,6 +446,54 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
               <span>{stats.series[stats.series.length - 1].day}</span>
             </div>
           </div>
+
+          {/* Recent visitors — with IP addresses */}
+          {recent && recent.length > 0 && (
+            <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-card p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                  Recent visitors
+                </h3>
+                <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                  last {recent.length} visits
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                      <th className="py-2 pe-3 font-bold text-start">Time</th>
+                      <th className="py-2 pe-3 font-bold text-start">IP address</th>
+                      <th className="py-2 pe-3 font-bold text-start">Country</th>
+                      <th className="py-2 font-bold text-start">Page</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recent.map((r, i) => (
+                      <tr
+                        key={`${r.created_at}-${i}`}
+                        className="border-b border-gray-100 dark:border-gray-800/60 last:border-0"
+                      >
+                        <td className="py-2 pe-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          {formatTime(r.created_at)}
+                        </td>
+                        <td className="py-2 pe-3 font-mono font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                          {r.ip ?? '—'}
+                        </td>
+                        <td className="py-2 pe-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          <span className="me-1">{flagOf(r.country ?? '')}</span>
+                          {countryName(r.country ?? '??')}
+                        </td>
+                        <td className="py-2 text-gray-700 dark:text-gray-300">
+                          {toolLabel(r.tool_id)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Tools + countries */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -369,6 +529,25 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
                 </ul>
               )}
             </div>
+          </div>
+
+          {/* Shares — by channel + by tool */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {shareStats ? (
+              <>
+                <BarList
+                  title={`Shares by channel · ${shareStats.total} total`}
+                  rows={shareStats.channelRows}
+                />
+                <BarList title="Shares by tool" rows={shareStats.toolRows} />
+              </>
+            ) : (
+              <div className="md:col-span-2 rounded-2xl border border-dashed border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/30 p-5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                Share tracking isn’t enabled yet — run the “Update SQL” from the
+                README (creates the <code className="font-bold">shares</code> table),
+                then refresh.
+              </div>
+            )}
           </div>
         </>
       )}

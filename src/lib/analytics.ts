@@ -1,18 +1,19 @@
 /**
- * Anonymous visit tracker.
+ * Visit + share tracker.
  *
- * Privacy design (matches the site's promise):
- *   • no cookies, no personal data, no IP addresses stored
+ * Privacy design:
+ *   • no cookies, no personal profiles
  *   • each browser gets ONE random ID that identifies nothing but itself;
  *     only a salted SHA-256 of it ever leaves the device
- *   • country comes from a single lookup (ipwho.is) cached for a week
+ *   • the visitor IP (for security/abuse stats) comes from a single
+ *     per-session lookup (ipwho.is) and is stored with the visit row —
+ *     keep retention short (see the optional purge job in the README)
  *   • tracking is best-effort: failures are swallowed, the app never breaks
  */
 import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured } from '../config/admin';
 
-const DAY_MS = 86_400_000;
 const VID_KEY = 'tz_vid';
-const COUNTRY_KEY = 'tz_country';
+const GEO_KEY = 'tz_geo';
 const LAST_VISIT_KEY = 'tz_last_visit';
 
 const today = (): string => new Date().toISOString().slice(0, 10);
@@ -40,26 +41,60 @@ const visitorHash = async (): Promise<string> => {
     .join('');
 };
 
-/** Two-letter country code, looked up once and cached for a week. */
-const getCountry = async (): Promise<string> => {
+type Geo = { ip: string; country: string };
+
+/**
+ * Visitor IP + country, fetched once per browser session (cached in
+ * sessionStorage) so route changes don't hammer the geo service.
+ */
+const getGeo = async (): Promise<Geo> => {
   try {
-    const cached = localStorage.getItem(COUNTRY_KEY);
-    if (cached) {
-      const [ts, code] = cached.split('|');
-      if (Date.now() - Number(ts) < 7 * DAY_MS) return code;
-    }
-    const res = await fetch('https://ipwho.is/');
-    if (!res.ok) throw new Error(String(res.status));
-    const json: unknown = await res.json();
-    const code =
-      json && typeof json === 'object' && typeof (json as { country_code?: unknown }).country_code === 'string'
-        ? (json as { country_code: string }).country_code
-        : '??';
-    localStorage.setItem(COUNTRY_KEY, `${Date.now()}|${code}`);
-    return code;
+    const cached = sessionStorage.getItem(GEO_KEY);
+    if (cached) return JSON.parse(cached) as Geo;
   } catch {
-    return '??';
+    /* ignore */
   }
+  const geo: Geo = { ip: 'unknown', country: '??' };
+  try {
+    const res = await fetch('https://ipwho.is/');
+    if (res.ok) {
+      const json: unknown = await res.json();
+      if (json && typeof json === 'object') {
+        const { ip, country_code } = json as { ip?: unknown; country_code?: unknown };
+        if (typeof ip === 'string') geo.ip = ip;
+        if (typeof country_code === 'string') geo.country = country_code;
+      }
+    }
+  } catch {
+    /* offline / blocked — fall back to unknown */
+  }
+  try {
+    sessionStorage.setItem(GEO_KEY, JSON.stringify(geo));
+  } catch {
+    /* ignore */
+  }
+  return geo;
+};
+
+/** POSTs one row to Supabase REST. Fire-and-forget, never throws. */
+const insertRow = (table: 'visits' | 'shares', row: Record<string, unknown>): void => {
+  if (!isSupabaseConfigured()) return;
+  void (async () => {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify(row),
+        keepalive: true,
+      });
+    } catch {
+      /* best-effort only */
+    }
+  })();
 };
 
 /** Logs one page view (a tool id, or "home"). Never throws. */
@@ -78,22 +113,41 @@ export const logVisit = (toolId: string): void => {
 
   void (async () => {
     try {
-      const [visitor_hash, country] = await Promise.all([visitorHash(), getCountry()]);
-      await fetch(`${SUPABASE_URL}/rest/v1/visits`, {
-        method: 'POST',
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({
-          day: today(),
-          path: window.location.hash || '#home',
-          tool_id: toolId,
-          country,
-          visitor_hash,
-        }),
-        keepalive: true,
+      const [visitor_hash, geo] = await Promise.all([visitorHash(), getGeo()]);
+      insertRow('visits', {
+        day: today(),
+        path: window.location.hash || '#home',
+        tool_id: toolId,
+        country: geo.country,
+        ip: geo.ip,
+        visitor_hash,
+      });
+    } catch {
+      /* best-effort only */
+    }
+  })();
+};
+
+/**
+ * Logs one share click (which tool, which channel, from the tool screen
+ * or from a home card). Never throws.
+ */
+export const logShare = (
+  toolId: string,
+  channel: string,
+  origin: 'tool' | 'card'
+): void => {
+  if (!isSupabaseConfigured()) return;
+  void (async () => {
+    try {
+      const geo = await getGeo();
+      insertRow('shares', {
+        day: today(),
+        tool_id: toolId,
+        channel,
+        origin,
+        country: geo.country,
+        ip: geo.ip,
       });
     } catch {
       /* best-effort only */
