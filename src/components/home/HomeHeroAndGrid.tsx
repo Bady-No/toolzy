@@ -227,16 +227,16 @@ export const HomeHeroAndGrid: React.FC = () => {
             </div>
           </div>
 
-          {/* ---- Artwork: the illustration levitates on a tilted glass card ---- */}
+          {/* ---- Artwork: the illustration (background removed) levitates on the aura ---- */}
           <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-none">
             {/* violet aura glowing behind the art */}
             <div
-              className="aurora start-[5%] end-[5%] top-[8%] bottom-[16%] bg-violet-400/45 dark:bg-violet-500/35"
+              className="aurora start-[-6%] end-[-6%] top-[-4%] bottom-[10%] bg-violet-400/50 dark:bg-violet-500/40"
               aria-hidden="true"
             />
 
             <figure
-              className="hero-art relative rounded-[2rem] border border-white/70 bg-gradient-to-br from-white via-white to-indigo-100/90 p-4 sm:p-5 shadow-raised"
+              className="hero-art relative"
               style={{ '--rot': '-2.5deg' } as React.CSSProperties}
             >
               <img
@@ -246,7 +246,7 @@ export const HomeHeroAndGrid: React.FC = () => {
                 width={1200}
                 height={1200}
                 fetchPriority="high"
-                className="w-full h-auto rounded-[1.25rem]"
+                className="w-full h-auto drop-shadow-[0_18px_28px_rgba(79,70,235,0.18)]"
               />
             </figure>
 
