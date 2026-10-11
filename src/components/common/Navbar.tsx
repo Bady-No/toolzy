@@ -176,57 +176,25 @@ export const Navbar: React.FC = () => {
         >
           {/* Reading progress across the whole page */}
           <span ref={progressRef} className="scroll-progress" aria-hidden="true" />
-          {/* Brand */}
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              onClick={() => handleNav('home')}
-              className="group inline-flex items-center cursor-pointer rounded-lg"
-              aria-label={t('nav.home')}
-            >
-              <img
-                src={`${import.meta.env.BASE_URL}logo-toolzy.png`}
-                alt="Toolzy"
-                width={959}
-                height={364}
-                className="h-7 sm:h-8 w-auto shrink-0 transition-transform duration-300 group-hover:scale-105 dark:brightness-0 dark:invert"
-              />
-            </button>
-
-            <span
-              aria-hidden="true"
-              className="hidden lg:block w-px h-6 bg-gray-200 dark:bg-gray-800"
+          {/* Mobile logo — desktop gets the centered copy after the nav */}
+          <button
+            onClick={() => handleNav('home')}
+            className="md:hidden group inline-flex items-center cursor-pointer rounded-lg shrink-0"
+            aria-label={t('nav.home')}
+          >
+            <img
+              src={`${import.meta.env.BASE_URL}logo-toolzy.png`}
+              alt="Toolzy"
+              width={959}
+              height={364}
+              className="h-7 w-auto shrink-0 transition-transform duration-300 group-hover:scale-105 dark:brightness-0 dark:invert"
             />
-
-            {/* Tagline on home, live breadcrumb inside a tool */}
-            {activeTool === 'home' || !activeMeta ? (
-              <p className="hidden lg:block text-xs text-gray-500 dark:text-gray-400 truncate max-w-[15rem]">
-                {t('app.tagline')}
-              </p>
-            ) : (
-              <div className="hidden lg:flex items-center gap-1.5 text-xs min-w-0">
-                <button
-                  onClick={() => handleNav('home')}
-                  className="font-semibold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                >
-                  {t('nav.home')}
-                </button>
-                <ChevronRight
-                  aria-hidden="true"
-                  className={`w-3 h-3 shrink-0 text-gray-300 dark:text-gray-600 ${
-                    lang === 'ar' ? 'rotate-180' : ''
-                  }`}
-                />
-                <span aria-current="page" className="font-bold text-gray-900 dark:text-white truncate">
-                  {t(activeMeta.titleKey)}
-                </span>
-              </div>
-            )}
-          </div>
+          </button>
 
           {/* Desktop Nav */}
           <nav
             ref={navRef}
-            className="relative hidden md:flex items-center gap-1.5"
+            className="relative hidden md:flex items-center gap-1.5 shrink-0"
             aria-label={t('nav.tools')}
           >
             {/* Gliding active indicator */}
@@ -326,6 +294,50 @@ export const Navbar: React.FC = () => {
               )}
             </div>
           </nav>
+
+          {/* Divider + contextual text (tagline on home, breadcrumb inside a tool) */}
+          <span
+            aria-hidden="true"
+            className="hidden lg:block w-px h-6 bg-gray-200 dark:bg-gray-800 shrink-0"
+          />
+          {activeTool === 'home' || !activeMeta ? (
+            <p className="hidden lg:block text-xs text-gray-500 dark:text-gray-400 truncate max-w-[15rem]">
+              {t('app.tagline')}
+            </p>
+          ) : (
+            <div className="hidden lg:flex items-center gap-1.5 text-xs min-w-0">
+              <button
+                onClick={() => handleNav('home')}
+                className="font-semibold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                {t('nav.home')}
+              </button>
+              <ChevronRight
+                aria-hidden="true"
+                className={`w-3 h-3 shrink-0 text-gray-300 dark:text-gray-600 ${
+                  lang === 'ar' ? 'rotate-180' : ''
+                }`}
+              />
+              <span aria-current="page" className="font-bold text-gray-900 dark:text-white truncate">
+                {t(activeMeta.titleKey)}
+              </span>
+            </div>
+          )}
+
+          {/* Brand — pinned to the exact middle of the bar (md and up) */}
+          <button
+            onClick={() => handleNav('home')}
+            aria-label={t('nav.home')}
+            className="hidden md:inline-flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 group items-center cursor-pointer rounded-lg"
+          >
+            <img
+              src={`${import.meta.env.BASE_URL}logo-toolzy.png`}
+              alt="Toolzy"
+              width={959}
+              height={364}
+              className="h-8 w-auto shrink-0 transition-transform duration-300 group-hover:scale-105 dark:brightness-0 dark:invert"
+            />
+          </button>
 
           {/* Right actions */}
           <div className="ms-auto flex items-center gap-2">
