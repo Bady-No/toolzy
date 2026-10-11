@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { ToastContainer } from './components/common/ToastContainer';
 import { CommandPalette } from './components/common/CommandPalette';
+import { logVisit } from './lib/analytics';
 
 import { HomeHeroAndGrid } from './components/home/HomeHeroAndGrid';
 import { ImageCompressor } from './components/tools/ImageCompressor';
@@ -14,8 +15,25 @@ import { BatchResizer } from './components/tools/BatchResizer';
 import { QrGenerator } from './components/tools/QrGenerator';
 import { QrReader } from './components/tools/QrReader';
 
+// Private stats page — code-split so visitors never download it
+const AdminPanel = React.lazy(() => import('./components/admin/AdminPanel'));
+
 const AppContent: React.FC = () => {
   const { activeTool } = useApp();
+  const [isAdmin, setIsAdmin] = useState(
+    () => window.location.hash === '#admin'
+  );
+
+  useEffect(() => {
+    const sync = () => setIsAdmin(window.location.hash === '#admin');
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+
+  // Anonymous visit counter (no-op until Supabase is configured)
+  useEffect(() => {
+    if (!isAdmin) logVisit(activeTool);
+  }, [activeTool, isAdmin]);
 
   useEffect(() => {
     // Register PWA service worker if supported
@@ -62,10 +80,22 @@ const AppContent: React.FC = () => {
 
       {/* Top padding reserves the fixed navbar's height (12px pad + h-14/h-16 bar) + old py-8/10 gap */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-[100px] sm:pt-[116px] pb-8 sm:pb-10">
-        {/* Re-mounts on navigation so every screen gets a clean entrance */}
-        <div key={activeTool} className="page-enter">
-          {renderTool()}
-        </div>
+        {isAdmin ? (
+          <Suspense
+            fallback={
+              <div className="py-24 text-center text-sm text-gray-400 dark:text-gray-500">
+                Loading…
+              </div>
+            }
+          >
+            <AdminPanel />
+          </Suspense>
+        ) : (
+          /* Re-mounts on navigation so every screen gets a clean entrance */
+          <div key={activeTool} className="page-enter">
+            {renderTool()}
+          </div>
+        )}
       </main>
 
       <Footer />
