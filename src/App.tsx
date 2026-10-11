@@ -15,17 +15,22 @@ import { BatchResizer } from './components/tools/BatchResizer';
 import { QrGenerator } from './components/tools/QrGenerator';
 import { QrReader } from './components/tools/QrReader';
 
+// Private admin page — secret hash route. This is only an obscurity layer:
+// the real protection is the Supabase email+password login inside the panel.
+// Change the string to move the door (bookmark it — don't publish it).
+const ADMIN_ROUTE = '#vault-9k4m7v2q';
+
 // Private stats page — code-split so visitors never download it
 const AdminPanel = React.lazy(() => import('./components/admin/AdminPanel'));
 
 const AppContent: React.FC = () => {
   const { activeTool } = useApp();
   const [isAdmin, setIsAdmin] = useState(
-    () => window.location.hash === '#admin'
+    () => window.location.hash === ADMIN_ROUTE
   );
 
   useEffect(() => {
-    const sync = () => setIsAdmin(window.location.hash === '#admin');
+    const sync = () => setIsAdmin(window.location.hash === ADMIN_ROUTE);
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
   }, []);

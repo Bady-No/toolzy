@@ -65,7 +65,9 @@ Pushing to `main` automatically builds and deploys to **GitHub Pages** via GitHu
 
 ## 📊 Admin dashboard (visitor stats)
 
-The site has a private stats page at **`#admin`** (not linked anywhere): login with your
+The site has a private stats page at a **secret hash route** (an unguessable link
+like `#vault-…`, set by `ADMIN_ROUTE` in `src/App.tsx` — don't publish it): login
+with your
 admin email/password to see visits, unique visitors, a 30-day chart, most-used tools,
 countries, a recent-visitors log (with IP addresses) and every tool-share click.
 Data is stored in [Supabase](https://supabase.com) (free tier).
@@ -109,9 +111,9 @@ can *read* anything (enforced by database policies).
    Then **Authentication → Sign in → Email**: turn **off** “Allow new users to sign up”.
 4. Copy your **Project URL** and **anon/public key** (Settings → API keys) into
    `src/config/admin.ts`.
-5. Commit & push. Open `https://<your-site>/toolzy/#admin` and sign in.
+5. Commit & push. Open `https://<your-site>/<secret-hash-from-ADMIN_ROUTE>` and sign in.
 
-Until step 4 is done, the tracker stays silent and `#admin` shows a setup notice —
+Until step 4 is done, the tracker stays silent and the admin route shows a setup notice —
 so it is safe to deploy before configuring.
 
 ### Update SQL (IP logging + share tracking)
@@ -169,7 +171,7 @@ $$);
 ```
 src/
 ├── components/
-│   ├── admin/      Private #admin dashboard (lazy-loaded, Supabase auth)
+│   ├── admin/      Private stats dashboard (secret route, lazy, Supabase auth)
 │   ├── common/    Navbar, CommandPalette, Dropzone, ToolHeader, ShareButton, …
 │   ├── home/      Landing hero + searchable tool grid
 │   └── tools/     One component per tool
