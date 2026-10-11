@@ -14,8 +14,8 @@
  *      then turn OFF "Allow new users to sign up" (Email provider settings)
  *   4. Paste your Project URL and anon/public key below
  */
-export const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
-export const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+export const SUPABASE_URL = 'https://pocapvxysdiijdytnnqz.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvY2Fwdnh5c2RpaWpkeXRubnF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MzM1NDAsImV4cCI6MjEwNzMwOTU0MH0.VE08ilJr_DjILuFASlWZv7nopM-UdYrlLS8qlvLfixY';
 
 export const isSupabaseConfigured = (): boolean =>
   !SUPABASE_URL.includes('YOUR-PROJECT') && !SUPABASE_ANON_KEY.includes('YOUR-ANON');
