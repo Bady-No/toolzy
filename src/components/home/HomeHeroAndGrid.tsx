@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { TOOLS } from '../../constants/tools';
 import { ShareButton } from '../common/ShareButton';
+import heroPicture from '../../assets/hero-picture.webp';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -116,12 +117,12 @@ export const HomeHeroAndGrid: React.FC = () => {
 
   const ArrowIcon = lang === 'ar' ? ArrowLeft : ArrowRight;
 
-  // Decorative tool chips levitating around the hero (xl and up only)
+  // Decorative tool chips levitating around the hero artwork (xl and up only)
   const floatingChips = [
-    { icon: FileText, label: 'PDF', tone: 'text-rose-500', className: 'top-24 start-0', style: { '--rot': '-7deg', animationDelay: '-1.2s' } },
-    { icon: QrCode, label: 'QR', tone: 'text-amber-500', className: 'top-16 end-0', style: { '--rot': '6deg', animationDelay: '-3.4s' } },
-    { icon: RefreshCw, label: 'WebP', tone: 'text-indigo-500', className: 'top-72 start-5', style: { '--rot': '5deg', animationDelay: '-5.1s' } },
-    { icon: Scissors, label: 'PNG', tone: 'text-emerald-500', className: 'top-64 end-4', style: { '--rot': '-5deg', animationDelay: '-2.3s' } },
+    { icon: FileText, label: 'PDF', tone: 'text-rose-500', className: 'top-6 -start-6', style: { '--rot': '-7deg', animationDelay: '-1.2s' } },
+    { icon: QrCode, label: 'QR', tone: 'text-amber-500', className: 'top-3 -end-5', style: { '--rot': '6deg', animationDelay: '-3.4s' } },
+    { icon: RefreshCw, label: 'WebP', tone: 'text-indigo-500', className: 'bottom-32 -start-8', style: { '--rot': '5deg', animationDelay: '-5.1s' } },
+    { icon: Scissors, label: 'PNG', tone: 'text-emerald-500', className: 'bottom-20 -end-6', style: { '--rot': '-5deg', animationDelay: '-2.3s' } },
   ];
 
   // "/" focuses the tool search, like a modern command palette
@@ -176,25 +177,8 @@ export const HomeHeroAndGrid: React.FC = () => {
 
   return (
     <div ref={rootRef} className="relative space-y-16 sm:space-y-20 py-2">
-      {/* Floating decorative chips (wrapped so spacing utilities never touch them) */}
-      <div className="pointer-events-none" aria-hidden="true">
-        {floatingChips.map((chip) => {
-          const ChipIcon = chip.icon;
-          return (
-            <span
-              key={chip.label}
-              className={`hero-chip ${chip.className}`}
-              style={chip.style as React.CSSProperties}
-            >
-              <ChipIcon className={`w-3.5 h-3.5 ${chip.tone}`} />
-              {chip.label}
-            </span>
-          );
-        })}
-      </div>
-
       {/* ============ Hero ============ */}
-      <section className="relative overflow-hidden text-center max-w-4xl mx-auto space-y-7 pt-4 sm:pt-10 pb-2">
+      <section className="relative overflow-hidden max-w-6xl mx-auto px-6 lg:px-8 space-y-10 pt-4 sm:pt-10 pb-2">
         <div className="aurora -top-24 -start-20 w-72 h-72 bg-indigo-400/50 dark:bg-indigo-600/40" aria-hidden="true" />
         <div
           className="aurora -top-10 -end-24 w-64 h-64 bg-ink-300/45 dark:bg-ink-600/50"
@@ -202,42 +186,92 @@ export const HomeHeroAndGrid: React.FC = () => {
           aria-hidden="true"
         />
 
-        <div className="relative stagger space-y-7">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-gray-900/70 backdrop-blur border border-emerald-200 dark:border-emerald-800/70 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm font-semibold shadow-card">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>{t('app.privacyGuarantee')}</span>
+        <div className="relative stagger grid lg:grid-cols-[1.08fr_1fr] gap-10 lg:gap-14 items-center">
+          {/* ---- Copy ---- */}
+          <div className="stagger text-center lg:text-start space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-gray-900/70 backdrop-blur border border-emerald-200 dark:border-emerald-800/70 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm font-semibold shadow-card">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>{t('app.privacyGuarantee')}</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl lg:text-[2.75rem] xl:text-[3.25rem] font-black tracking-tight leading-[1.12] text-gradient text-gradient-shimmer text-balance">
+              {t('app.heroTitle')}
+            </h1>
+
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              {t('app.heroSubtitle')}
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 lg:justify-start">
+              <button
+                type="button"
+                onClick={() => setActiveTool('compress')}
+                className="btn btn-primary btn-shine w-full sm:w-auto px-6 py-3 text-sm"
+              >
+                <Zap className="w-4 h-4" />
+                <span>{t('home.ctaStart')}</span>
+                <ArrowIcon className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={scrollToGrid}
+                className="btn btn-secondary w-full sm:w-auto px-6 py-3 text-sm"
+              >
+                <Search className="w-4 h-4" />
+                <span>{t('app.exploreTools')}</span>
+              </button>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-gradient text-gradient-shimmer">
-            {t('app.heroTitle')}
-          </h1>
+          {/* ---- Artwork: the illustration levitates on a tilted glass card ---- */}
+          <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-none">
+            {/* violet aura glowing behind the art */}
+            <div
+              className="aurora start-[5%] end-[5%] top-[8%] bottom-[16%] bg-violet-400/45 dark:bg-violet-500/35"
+              aria-hidden="true"
+            />
 
-          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            {t('app.heroSubtitle')}
-          </p>
+            <figure
+              className="hero-art relative rounded-[2rem] border border-white/70 bg-gradient-to-br from-white via-white to-indigo-100/90 p-4 sm:p-5 shadow-raised"
+              style={{ '--rot': '-2.5deg' } as React.CSSProperties}
+            >
+              <img
+                src={heroPicture}
+                alt=""
+                aria-hidden="true"
+                width={1200}
+                height={1200}
+                fetchPriority="high"
+                className="w-full h-auto rounded-[1.25rem]"
+              />
+            </figure>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => setActiveTool('compress')}
-              className="btn btn-primary btn-shine w-full sm:w-auto px-6 py-3 text-sm"
-            >
-              <Zap className="w-4 h-4" />
-              <span>{t('home.ctaStart')}</span>
-              <ArrowIcon className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={scrollToGrid}
-              className="btn btn-secondary w-full sm:w-auto px-6 py-3 text-sm"
-            >
-              <Search className="w-4 h-4" />
-              <span>{t('app.exploreTools')}</span>
-            </button>
+            {/* Levitating tool chips orbiting the artwork (xl and up only) */}
+            <div className="pointer-events-none" aria-hidden="true">
+              {floatingChips.map((chip) => {
+                const ChipIcon = chip.icon;
+                return (
+                  <span
+                    key={chip.label}
+                    className={`hero-chip ${chip.className}`}
+                    style={chip.style as React.CSSProperties}
+                  >
+                    <ChipIcon className={`w-3.5 h-3.5 ${chip.tone}`} />
+                    {chip.label}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* soft ground shadow under the floating card */}
+            <div
+              className="mx-auto mt-5 h-3 w-1/2 rounded-full bg-indigo-600/20 blur-md"
+              aria-hidden="true"
+            />
           </div>
         </div>
 

@@ -489,6 +489,11 @@
 @media (min-width: 1280px) {
   .hero-chip { display: inline-flex; }
 }
+
+/* Hero artwork: slow levitation with a gentle tilt (tilt comes from --rot) */
+.hero-art {
+  animation: tl-float-soft 9s ease-in-out infinite;
+}
 }
 
 @layer components {
