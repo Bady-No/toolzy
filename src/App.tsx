@@ -14,11 +14,17 @@ import { BackgroundRemover } from './components/tools/BackgroundRemover';
 import { BatchResizer } from './components/tools/BatchResizer';
 import { QrGenerator } from './components/tools/QrGenerator';
 import { QrReader } from './components/tools/QrReader';
+import { TOOLS } from './constants/tools';
 
 // Private admin page — secret hash route. This is only an obscurity layer:
 // the real protection is the Supabase email+password login inside the panel.
 // Change the string to move the door (bookmark it — don't publish it).
 const ADMIN_ROUTE = '#vault-9k4m7v2q';
+
+// Every hash the app accepts: a real tool id, or the secret admin route.
+// Anything else (hand-typed junk, old links) gets rewritten to the clean
+// homepage URL so the address bar never shows a dead link.
+const VALID_HASHES = new Set<string>([...TOOLS.map((t) => t.id), ADMIN_ROUTE.slice(1)]);
 
 // Private stats page — code-split so visitors never download it
 const AdminPanel = React.lazy(() => import('./components/admin/AdminPanel'));
@@ -33,6 +39,24 @@ const AppContent: React.FC = () => {
     const sync = () => setIsAdmin(window.location.hash === ADMIN_ROUTE);
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
+  }, []);
+
+  // Redirect unknown hashes to the clean homepage URL. Tool deep links
+  // (#compress …) and the admin route are kept; everything else is stripped.
+  useEffect(() => {
+    const cleanHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && !VALID_HASHES.has(hash)) {
+        window.history.replaceState(
+          null,
+          '',
+          window.location.pathname + window.location.search
+        );
+      }
+    };
+    cleanHash();
+    window.addEventListener('hashchange', cleanHash);
+    return () => window.removeEventListener('hashchange', cleanHash);
   }, []);
 
   // Anonymous visit counter (no-op until Supabase is configured)

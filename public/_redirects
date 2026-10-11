@@ -1,0 +1,5 @@
+# Netlify: anything that isn't a real file redirects to the homepage.
+# Real files (assets/*, sw.js, manifest.json, index.html) are always served
+# first — this rule only catches unknown paths like /admin or /wp-login.php.
+# 302 (temporary) on purpose, so it's easy to undo if real subpages ever exist.
+/*  /  302
