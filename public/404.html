@@ -1,0 +1,51 @@
+<!doctype html>
+<!--
+  Custom 404 page — served automatically by Netlify AND GitHub Pages for any
+  path that doesn't exist (e.g. /admin, /wp-login.php). It instantly sends the
+  visitor to the homepage instead of showing an error.
+
+  Why this file instead of only netlify.toml redirects: this mechanism works
+  on every static host with no dashboard settings, so the site stays protected
+  even if it's ever moved to another host.
+
+  Hash deep links (#compress …) are preserved, so sharing still works even if
+  someone appends junk to the path.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Toolzy</title>
+    <script>
+      (function () {
+        // GitHub Pages serves the site under /toolzy/; anywhere else it's the root.
+        var base = location.pathname.indexOf('/toolzy/') === 0 ? '/toolzy/' : '/';
+        location.replace(location.origin + base + location.hash);
+      })();
+    </script>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        background: #faf9fc;
+        color: #1a1523;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #0b0a0f; color: #e9e7f0; }
+      }
+      p { font-size: 14px; opacity: 0.7; }
+      a { color: #7f46f7; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <div style="text-align: center">
+      <p>Redirecting to the homepage…</p>
+      <noscript><p><a href="/">Go to the homepage</a></p></noscript>
+    </div>
+  </body>
+</html>
