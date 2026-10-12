@@ -1,0 +1,18 @@
+# Netlify configuration — single source of truth for routing.
+#
+# The site is a single-page app with hash routing, so the only legitimate
+# URLs are the homepage (plus its assets) and hash deep links (#compress …).
+# Any path that isn't a real file redirects to the homepage.
+# Real files (assets/*, sw.js, manifest.json, index.html, robots.txt …)
+# are always served first — this rule only catches unknown paths
+# such as /admin or /wp-login.php.
+# 302 (temporary) on purpose, so it's easy to undo if real subpages ever exist.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/"
+  status = 302
